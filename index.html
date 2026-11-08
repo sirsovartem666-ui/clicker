@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Огуречная Ферма Семки</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  
+  body {
+    font-family: 'Comic Sans MS', Arial, sans-serif;
+    background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 40%, #90ee90 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .game-wrapper {
+    display: flex;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    border: 8px solid #fff;
+    overflow: hidden;
+    width: 900px;
+    max-width: 95vw;
+    height: 600px;
+  }
+
+  /* === ЛЕВАЯ ПАНЕЛЬ (КЛИКЕР) === */
+  .left-panel {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(to bottom, #a1c4fd, #c2e9fb);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-right: 4px dashed #fff;
+  }
+
+  .semka-status {
+    position: absolute;
+    top: 20px;
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: #ff6b6b;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    font-size: 1.1em;
+    text-align: center;
+    width: 80%;
+    transition: all 0.3s;
+  }
+
+  .semka-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    margin-top: 50px;
+    margin-bottom: 20px;
+    transition: transform 0.3s;
+  }
+
+  /* Большой огурец для клика */
+  .big-cucumber {
+    font-size: 150px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+    position: relative;
+    user-select: none;
+  }
+
+  .big-cucumber:active {
+    transform: scale(0.9) translateY(10px);
+  }
+
+  .big-cucumber.bounce {
+    animation: bounce 0.3s;
+  }
+
+  @keyframes bounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1); }
+  }
+
+  .counter {
+    font-size: 2em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-top: 10px;
+    text-shadow: 2px 2px 0 #fff;
+  }
+
+  /* === ПРАВАЯ ПАНЕЛЬ (МАГАЗИН) === */
+  .right-panel {
+    width: 350px;
+    background: #fff9c4;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .right-panel h2 {
+    text-align: center;
+    color: #ff6b6b;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    border-bottom: 3px dashed #ffd93d;
+    padding-bottom: 10px;
+  }
+
+  .shop-item {
+    background: #fff;
+    border: 3px solid #ffd93d;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .shop-item:hover:not(.disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background: #fffde7;
+  }
+
+  .shop-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+  }
+
+  /* Специальный стиль для ульта */
+  .shop-item.ult-item {
+    border-color: #e74c3c;
+    background: #ffeaa7;
+  }
+  .shop-item.ult-item:hover:not(.disabled) {
+    background: #ffcccc;
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+  }
+
+  .item-icon {
+    font-size: 2.5em;
+    background: #f0f0f0;
+    border-radius: 10px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .item-info {
+    flex: 1;
+  }
+
+  .item-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+  }
+
+  .item-desc {
+    font-size: 0.8em;
+    color: #777;
+    margin-bottom: 5px;
+  }
+
+  .item-cost {
+    font-weight: bold;
+    color: #e74c3c;
+    font-size: 1em;
+  }
+
+  .item-cost span { color: #2c3e50; }
+
+  .item-level {
+    background: #ff6b6b;
+    color: #fff;
+    font-size: 0.7em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 5px;
+  }
+
+  /* Всплывающие цифры */
+  .floating-number {
+    position: absolute;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #e74c3c;
+    text-shadow: 2px 2px 0 #fff;
+    pointer-events: none;
+    animation: floatUp 1s forwards;
+    z-index: 100;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+  }
+
+  /* Эффект сна Семки */
+  .sleeping .semka-photo {
+    filter: grayscale(0.5) brightness(0.8);
+  }
+  .sleeping .big-cucumber {
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)) blur(1px);
+  }
+
+  /* Эффект взрыва при курсе */
+  .curse-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(52, 152, 219, 0.8);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #fff;
+    font-size: 4em;
+    font-weight: bold;
+    text-shadow: 4px 4px 0 #000;
+    text-align: center;
+  }
+  .curse-overlay.show {
+    display: flex;
+    animation: flash 0.5s infinite alternate;
+  }
+  @keyframes flash {
+    from { background: rgba(52, 152, 219, 0.8); }
+    to { background: rgba(231, 76, 60, 0.9); }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Экран "Курсы" -->
+<div class="curse-overlay" id="curse-overlay">
+  <div>❄️ КУРСА! ❄️</div>
+  <div style="font-size: 0.4em; margin-top: 20px;">Семка заморозил твой прогресс...</div>
+</div>
+
+<div class="game-wrapper">
+  
+  <!-- ЛЕВАЯ ПАНЕЛЬ -->
+  <div class="left-panel">
+    <div class="semka-status" id="semka-status">Семка спит... (Урожай идет медленно)</div>
+    
+    <!-- МЕСТО ДЛЯ ФОТО СЕМКИ -->
+    <img src="semka1.jpg" alt="Семка" class="semka-photo" id="semka-photo" onerror="this.src='https://i.pravatar.cc/150?img=12'">
+    
+    <div class="big-cucumber" id="main-cucumber" onclick="clickCucumber(event)">🥒</div>
+    
+    <div class="counter">Огурцов: <span id="cucumber-count">0</span></div>
+  </div>
+
+  <!-- ПРАВАЯ ПАНЕЛЬ (МАГАЗИН) -->
+  <div class="right-panel">
+    <h2>Огуречный Магазин</h2>
+    <div id="shop-container">
+      <!-- Товары будут здесь -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ==== СОСТОЯНИЕ ИГРЫ ====
+  let cucumbers = 0;
+  let clickPower = 1;
+  let cps = 0; // Cucumbers Per Second (в секунду)
+  
+  // Ссылки на элементы
+  const countEl = document.getElementById('cucumber-count');
+  const cucumberEl = document.getElementById('main-cucumber');
+  const statusEl = document.getElementById('semka-status');
+  const leftPanel = document.querySelector('.left-panel');
+
+  // ==== МАГАЗИН ====
+  const shopItems = [
+    {
+      id: 'click1',
+      name: 'Турбо-палец',
+      desc: 'Увеличивает силу клика на +1',
+      icon: '👆',
+      baseCost: 10,
+      costMultiplier: 1.5,
+      level: 0,
+      effect: () => { clickPower += 1; },
+      getCost: (lvl) => Math.floor(10 * Math.pow(1.5, lvl))
+    },
+    {
+      id: 'auto1',
+      name: 'Бабушка-огородница',
+      desc: 'Собирает +1 огурец в секунду',
+      icon: '👵',
+      baseCost: 50,
+      level: 0,
+      effect: () => { cps += 1; },
+      getCost: (lvl) => Math.floor(50 * Math.pow(1.6, lvl))
+    },
+    {
+      id: 'click2',
+      name: 'Огуречный смузи',
+      desc: 'Сила клика +5 (Семка просыпается!)',
+      icon: '🥤',
+      baseCost: 200,
+      level: 0,
+      effect: () => { clickPower += 5; updateSemkaStatus(); },
+      getCost: (lvl) => Math.floor(200 * Math.pow(1.7, lvl))
+    },
+    {
+      id: 'auto2',
+      name: 'Теплица',
+      desc: '+5 огурцов в секунду',
+      icon: '🏡',
+      baseCost: 500,
+      level: 0,
+      effect: () => { cps += 5; },
+      getCost: (lvl) => Math.floor(500 * Math.pow(1.8, lvl))
+    },
+    // === ДОБАВЛЕНА КУРСА ===
+    {
+      id: 'curse',
+      name: 'КУРСА (Ульт Семки)',
+      desc: ')))',
+      icon: '❄️',
+      baseCost: 300,
+      level: 0,
+      isUlt: true,
+      effect: () => { activateCurse(); },
+      getCost: () => 300 // Цена фиксированная - 300
+    },
+    {
+      id: 'auto3',
+      name: 'Шаурма-автомат',
+      desc: '+20 огурцов в секунду (Семка доволен)',
+      icon: '🌯',
+      baseCost: 2000,
+      level: 0,
+      effect: () => { cps += 20; updateSemkaStatus(); },
+      getCost: (lvl) => Math.floor(2000 * Math.pow(2, lvl))
+    },
+    {
+      id: 'click3',
+      name: 'Гига-клик',
+      desc: 'Сила клика +25',
+      icon: '💥',
+      baseCost: 5000,
+      level: 0,
+      effect: () => { clickPower += 25; },
+      getCost: (lvl) => Math.floor(5000 * Math.pow(2.2, lvl))
+    }
+  ];
+
+  // ==== ОБНОВЛЕНИЕ СТАТУСА СЕМКИ ====
+  function updateSemkaStatus() {
+    if (clickPower >= 25) {
+      statusEl.textContent = "Семка в шоке! Столько огурцов!";
+      statusEl.style.color = "#e74c3c";
+      leftPanel.classList.remove('sleeping');
+    } else if (cps >= 20) {
+      statusEl.textContent = "Семка доволен. Он нажал курсу.";
+      statusEl.style.color = "#2ecc71";
+      leftPanel.classList.remove('sleeping');
+    } else if (clickPower >= 5 || cps >= 5) {
+      statusEl.textContent = "Семка проснулся и помогает!";
+      statusEl.style.color = "#f39c12";
+      leftPanel.classList.remove('sleeping');
+    } else {
+      statusEl.textContent = "Семка спит... (Урожай идет медленно)";
+      statusEl.style.color = "#ff6b6b";
+      leftPanel.classList.add('sleeping');
+    }
+  }
+
+  // ==== КЛИК ПО ОГУРЦУ ====
+  function clickCucumber(e) {
+    cucumbers += clickPower;
+    updateCounter();
+    
+    // Анимация
+    cucumberEl.classList.remove('bounce');
+    void cucumberEl.offsetWidth;
+    cucumberEl.classList.add('bounce');
+
+    // Всплывающая цифра
+    const rect = cucumberEl.getBoundingClientRect();
+    const panelRect = leftPanel.getBoundingClientRect();
+    
+    const num = document.createElement('div');
+    num.className = 'floating-number';
+    num.textContent = `+${clickPower}`;
+    num.style.left = (e.clientX - panelRect.left) + 'px';
+    num.style.top = (e.clientY - panelRect.top) + 'px';
+    leftPanel.appendChild(num);
+    
+    setTimeout(() => num.remove(), 1000);
+  }
+
+  // ==== ОБНОВЛЕНИЕ СЧЕТЧИКА ====
+  function updateCounter() {
+    countEl.textContent = Math.floor(cucumbers);
+    renderShop();
+  }
+
+  // ==== РЕНДЕР МАГАЗИНА ====
+  function renderShop() {
+    const container = document.getElementById('shop-container');
+    container.innerHTML = '';
+
+    shopItems.forEach(item => {
+      const cost = item.getCost(item.level);
+      const canAfford = cucumbers >= cost;
+      
+      const div = document.createElement('div');
+      div.className = `shop-item ${canAfford ? '' : 'disabled'} ${item.isUlt ? 'ult-item' : ''}`;
+      
+      div.innerHTML = `
+        <div class="item-icon">${item.icon}</div>
+        <div class="item-info">
+          <div class="item-name">${item.name} ${item.level > 0 && !item.isUlt ? `<span class="item-level">Ур. ${item.level}</span>` : ''}</div>
+          <div class="item-desc">${item.desc}</div>
+          <div class="item-cost">Цена: <span>${cost}</span> 🥒</div>
+        </div>
+      `;
+
+      if (canAfford) {
+        div.onclick = () => buyItem(item);
+      }
+
+      container.appendChild(div);
+    });
+  }
+
+  // ==== ПОКУПКА ====
+  function buyItem(item) {
+    const cost = item.getCost(item.level);
+    if (cucumbers >= cost) {
+      cucumbers -= cost;
+      item.level++;
+      item.effect();
+      updateCounter();
+      updateSemkaStatus();
+    }
+  }
+
+  // ==== АКТИВАЦИЯ КУРСЫ (ПОЛНЫЙ СБРОС) ====
+  function activateCurse() {
+    const overlay = document.getElementById('curse-overlay');
+    overlay.classList.add('show');
+    
+    // Ждем 2 секунды, чтобы игрок прочувствовал боль
+    setTimeout(() => {
+      // Полный сброс
+      cucumbers = 0;
+      clickPower = 1;
+      cps = 0;
+      
+      // Сбрасываем уровни всех предметов
+      shopItems.forEach(item => { item.level = 0; });
+      
+      // Обновляем интерфейс
+      updateCounter();
+      updateSemkaStatus();
+      
+      // Прячем оверлей
+      overlay.classList.remove('show');
+      
+      // Показываем забавное сообщение в статусе
+      statusEl.textContent = "Семка закурсил не туда... Всё сброшено!";
+      statusEl.style.color = "#e74c3c";
+      
+    }, 2500);
+  }
+
+  // ==== ИГРОВОЙ ЦИКЛ (АВТО-ДОХОД) ====
+  let lastTick = Date.now();
+  
+  setInterval(() => {
+    if (cps > 0) {
+      const now = Date.now();
+      const delta = (now - lastTick) / 1000;
+      lastTick = now;
+      
+      cucumbers += cps * delta;
+      updateCounter();
+    } else {
+      lastTick = Date.now(); // Чтобы таймер не накапливался впустую
+    }
+  }, 100);
+
+  // ==== СТАРТ ====
+  updateSemkaStatus();
+  renderShop();
+</script>
+</body>
+</html>
